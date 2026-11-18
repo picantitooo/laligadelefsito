@@ -18,4 +18,3 @@ export const players: Player[] = [
   { name: "Valcra", wins: 2, losses: 5, initials: "VA", color: "#b86d83" },
   { name: "Gabriel", wins: 3, losses: 4, initials: "GA", color: "#6faaa0" },
 ];
-// piero -1 sheva -1 gabriel -1  fabri +1 valcra +1 pulse +1 pol +1
