@@ -1,3 +1,4 @@
+
 export type Player = {
   name: string;
   wins: number;
@@ -5,6 +6,9 @@ export type Player = {
   initials: string;
   color: string;
 };
+
+// Estadísticas históricas anteriores al sistema Elo.
+// No incrementar wins ni losses después de la migración.
 
 export const players: Player[] = [
   { name: "Piero", wins: 8, losses: 5, initials: "PI", color: "#e85d4a" },
@@ -17,6 +21,5 @@ export const players: Player[] = [
   { name: "Tarasexo", wins: 1, losses: 5, initials: "TA", color: "#8e9b58" },
   { name: "Valcra", wins: 3, losses: 9, initials: "VA", color: "#b86d83" },
   { name: "Gabriel", wins: 6, losses: 4, initials: "GA", color: "#6faaa0" },
-  { name: "rek", wins: 3, losses: 2, initials: "GA", color: "#a16faa" },
+  { name: "rek", wins: 3, losses: 2, initials: "RE", color: "#a16faa" },
 ];
-//  piero +1 fabri +1 pals +1 gabriel +1 valcra -1 pol -1 pulse -1 rek -1

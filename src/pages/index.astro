@@ -1,36 +1,36 @@
 
 ---
-import { players } from "../data/players";
+import { calculateRanking } from "../lib/ranking";
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const rankedPlayers = calculateRanking();
 
-const rankedPlayers = [...players]
-  .map((player) => {
-    const total = player.wins + player.losses;
+const leaders = rankedPlayers.filter(
+  (player) => player.position === 1
+);
 
-    return {
-      ...player,
-      rate: total ? (player.wins / total) * 100 : 0,
-    };
-  })
-  .sort(
-    (a, b) =>
-      b.rate - a.rate ||
-      b.wins - a.wins ||
-      a.name.localeCompare(b.name)
-  );
+const sharedLeadership = leaders.length > 1;
+
+const hasRatedMatches = rankedPlayers.some(
+  (player) => player.ratedGames > 0
+);
 ---
 
 <!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#17190f" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+
+    <meta name="theme-color" content="#14160e" />
 
     <meta
       name="description"
-      content="La Liga del Lefsito — Clasificación de Left 4 Dead 2."
+      content="La Liga del Lefsito — Clasificación competitiva de Left 4 Dead 2."
     />
 
     <title>La Liga del Lefsito | L4D2</title>
@@ -41,8 +41,16 @@ const rankedPlayers = [...players]
       href={`${base}/favicon.svg`}
     />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
 
     <link
       href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap"
@@ -51,22 +59,30 @@ const rankedPlayers = [...players]
   </head>
 
   <body>
-    <!-- ATMÓSFERA DE FONDO -->
+    <!-- ATMÓSFERA -->
 
     <div class="background" aria-hidden="true"></div>
     <div class="grain" aria-hidden="true"></div>
     <div class="vignette" aria-hidden="true"></div>
 
     <main class="shell">
-    <header class="hero-banner">
-      <img
-        src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/images/lefsito.png`}
-        alt="La Liga del Lefsito — Temporada 01"
-        class="hero-image"
-        loading="eager"
-        fetchpriority="high"
-        decoding="async"
-      />
+
+      <!-- PORTADA -->
+
+      <header class="hero-banner">
+        <h1 class="sr-only">
+          La Liga del Lefsito
+        </h1>
+
+        <img
+          src={`${base}/images/lefsito.png`}
+          alt="La Liga del Lefsito — Temporada 01"
+          class="hero-image"
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+        />
+      </header>
 
       <!-- LEADERBOARD -->
 
@@ -81,28 +97,42 @@ const rankedPlayers = [...players]
               SURVIVOR RANKING
             </span>
 
-            <h2 id="leaderboard-title">LEADERBOARD</h2>
+            <h2 id="leaderboard-title">
+              LEADERBOARD
+            </h2>
+
+            <p class="board-description">
+              Clasificación competitiva individual
+            </p>
           </div>
 
-          <div class="sort-note">
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.7"
-              stroke-linecap="round"
-              aria-hidden="true"
-            >
-              <path d="M4 6h16M4 12h11M4 18h6" />
-            </svg>
+          <div class="ranking-system">
+            <div class="ranking-system-icon">
+              <svg
+                width="21"
+                height="21"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M3 20h18" />
+                <path d="M5 16l5-5 4 3 6-9" />
+                <path d="M15 5h5v5" />
+              </svg>
+            </div>
 
-            <span>POR % DE VICTORIAS</span>
+            <div class="ranking-system-copy">
+              <strong>LEFSITO RATING</strong>
+              <span>ELO INDIVIDUAL</span>
+            </div>
           </div>
         </div>
 
-        <!-- TABLA DE CLASIFICACIÓN -->
+        <!-- TABLA -->
 
         <div class="table-scroll">
           <table class="ranking-table">
@@ -117,30 +147,70 @@ const rankedPlayers = [...players]
                 </th>
 
                 <th scope="col" class="number-heading">
-                  <span class="desktop-label">VICTORIAS</span>
-                  <span class="mobile-label" aria-hidden="true">W</span>
+                  <span class="desktop-label">
+                    VICTORIAS
+                  </span>
+
+                  <span
+                    class="mobile-label"
+                    aria-hidden="true"
+                  >
+                    W
+                  </span>
                 </th>
 
                 <th scope="col" class="number-heading">
-                  <span class="desktop-label">DERROTAS</span>
-                  <span class="mobile-label" aria-hidden="true">L</span>
+                  <span class="desktop-label">
+                    DERROTAS
+                  </span>
+
+                  <span
+                    class="mobile-label"
+                    aria-hidden="true"
+                  >
+                    L
+                  </span>
                 </th>
 
                 <th scope="col" class="rate-heading">
                   WIN RATE
                 </th>
+
+                <th
+                  scope="col"
+                  class="rating-heading"
+                  aria-sort="descending"
+                >
+                  <span class="rating-label">
+                    ELO
+
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 5v14M6 13l6 6 6-6" />
+                    </svg>
+                  </span>
+                </th>
               </tr>
             </thead>
 
             <tbody>
-              {rankedPlayers.map((player, index) => (
+              {rankedPlayers.map((player) => (
                 <tr
                   class:list={[
                     "player-row",
                     {
-                      champion: index === 0,
-                      "second-place": index === 1,
-                      "third-place": index === 2,
+                      champion: player.position === 1,
+                      "second-place": player.position === 2,
+                      "third-place": player.position === 3,
                     },
                   ]}
                 >
@@ -148,11 +218,11 @@ const rankedPlayers = [...players]
 
                   <td class="position-cell">
                     <span class="rank">
-                      {String(index + 1).padStart(2, "0")}
+                      {String(player.position).padStart(2, "0")}
                     </span>
                   </td>
 
-                  <!-- JUGADOR -->
+                  <!-- IDENTIDAD -->
 
                   <td class="identity-cell">
                     <div class="player-identity">
@@ -165,15 +235,16 @@ const rankedPlayers = [...players]
                       </div>
 
                       <div class="player-info">
-                        <span class="player-name">
-                          {player.name}
-                        </span>
+                        <div class="player-name-line">
+                          <span class="player-name">
+                            {player.name}
+                          </span>
 
-                        {index === 0 && (
-                          <span class="leader-tag">
+                          {player.position === 1 && (
                             <svg
-                              width="12"
-                              height="12"
+                              class="leader-crown"
+                              width="17"
+                              height="17"
                               viewBox="0 0 24 24"
                               fill="none"
                               stroke="currentColor"
@@ -183,9 +254,57 @@ const rankedPlayers = [...players]
                             >
                               <path d="m2 7 5 5 5-8 5 8 5-5-3 13H5Z" />
                             </svg>
+                          )}
+                        </div>
 
-                            LÍDER DE LA LIGA
+                        <div class="player-meta">
+                          <span
+                            class="competitive-rank"
+                            style={`--rank-color: ${player.rank.color}`}
+                          >
+                            {player.rank.name}
                           </span>
+
+                          {player.position === 1 && (
+                            <span class="leader-tag">
+                              {sharedLeadership
+                                ? "COLÍDER"
+                                : "LÍDER"}
+                            </span>
+                          )}
+                        </div>
+
+                        {player.recentResults.length > 0 && (
+                          <div
+                            class="recent-results"
+                            aria-label={`Últimas partidas: ${player.recentResults
+                              .map((result) =>
+                                result === "W"
+                                  ? "victoria"
+                                  : "derrota"
+                              )
+                              .join(", ")}`}
+                          >
+                            {player.recentResults.map((result) => (
+                              <span
+                                class:list={[
+                                  "result-dot",
+                                  {
+                                    "result-win": result === "W",
+                                    "result-loss": result === "L",
+                                  },
+                                ]}
+                                title={
+                                  result === "W"
+                                    ? "Victoria"
+                                    : "Derrota"
+                                }
+                                aria-hidden="true"
+                              >
+                                {result}
+                              </span>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -203,7 +322,7 @@ const rankedPlayers = [...players]
                     {player.losses}
                   </td>
 
-                  <!-- PORCENTAJE DE VICTORIAS -->
+                  <!-- WIN RATE -->
 
                   <td class="rate-cell">
                     <div class="rate-value">
@@ -218,15 +337,58 @@ const rankedPlayers = [...players]
                       aria-valuemin="0"
                       aria-valuemax="100"
                     >
-                      <span style={`width: ${player.rate}%`}></span>
+                      <span
+                        style={`width: ${player.rate}%`}
+                      ></span>
                     </div>
+                  </td>
+
+                  <!-- ELO INDIVIDUAL -->
+
+                  <td class="rating-cell">
+                    <strong class="rating-value">
+                      {player.displayRating}
+                    </strong>
+
+                    {player.ratedGames > 0 ? (
+                      <span
+                        class:list={[
+                          "rating-change",
+                          {
+                            positive: player.lastChange > 0,
+                            negative: player.lastChange < 0,
+                          },
+                        ]}
+                        title="Variación de Elo en su última partida"
+                      >
+                        {player.lastChange > 0
+                          ? "▲ +"
+                          : player.lastChange < 0
+                            ? "▼ "
+                            : ""}
+                        {player.lastChange.toFixed(1)}
+                      </span>
+                    ) : (
+                      <span class="rating-change initial">
+                        ESTIMADO
+                      </span>
+                    )}
+
+                    {player.provisional && player.ratedGames > 0 && (
+                      <span
+                        class="provisional-tag"
+                        title="Rating provisional durante las primeras cinco partidas con Elo"
+                      >
+                        PROVISIONAL
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
 
               {rankedPlayers.length === 0 && (
                 <tr>
-                  <td colspan="5" class="empty-state">
+                  <td colspan="6" class="empty-state">
                     NO HAY SUPERVIVIENTES REGISTRADOS.
                   </td>
                 </tr>
@@ -238,17 +400,139 @@ const rankedPlayers = [...players]
         <!-- INFORMACIÓN DEL RANKING -->
 
         <div class="board-footer">
-          <span>
-            WIN RATE = VICTORIAS / (VICTORIAS + DERROTAS) × 100
+          <span class="board-footer-label">
+            <span class="footer-indicator"></span>
+            ORDENADO POR ELO INDIVIDUAL
           </span>
 
           <span class="board-version">
-            L4D2 // V.01
+            LEFSITO RATING // V.02
           </span>
         </div>
       </section>
 
-      <!-- PIE DE PÁGINA -->
+      <!-- EXPLICACIÓN DEL SISTEMA -->
+
+      <details class="ranking-info">
+        <summary>
+          <span class="info-title">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 11v5M12 8h.01" />
+            </svg>
+
+            ¿Cómo funciona la clasificación?
+          </span>
+
+          <svg
+            class="chevron"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </summary>
+
+        <div class="ranking-info-content">
+          <p>
+            El Lefsito Rating es un sistema de clasificación
+            individual basado en una adaptación del algoritmo
+            Elo. Los jugadores ganan o pierden puntos según
+            el resultado de cada partida y el nivel de sus
+            rivales.
+          </p>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <strong>ELO INICIAL</strong>
+
+              <p>
+                Se estima utilizando las victorias y derrotas
+                históricas, con un ajuste bayesiano para evitar
+                puntuaciones extremas en jugadores con pocas
+                partidas.
+              </p>
+
+              <code>
+                1000 + 400 × log10((W + 5) / (L + 5))
+              </code>
+            </div>
+
+            <div class="info-item">
+              <strong>ACTUALIZACIÓN INDIVIDUAL</strong>
+
+              <p>
+                Cada jugador obtiene una variación diferente
+                de Elo según su rating previo y el rating de
+                los integrantes del equipo contrario.
+              </p>
+
+              <code>
+                Elo nuevo = Elo anterior + 32 × (S − E)
+              </code>
+            </div>
+
+            <div class="info-item">
+              <strong>WIN RATE</strong>
+
+              <p>
+                El porcentaje de victorias se conserva como
+                estadística informativa, pero ya no determina
+                la posición en el leaderboard.
+              </p>
+            </div>
+
+            <div class="info-item">
+              <strong>CLASIFICACIÓN PROVISIONAL</strong>
+
+              <p>
+                Los primeros cinco enfrentamientos registrados
+                con el nuevo sistema se consideran un periodo
+                de calibración.
+              </p>
+            </div>
+          </div>
+
+          <p class="info-notice">
+            El rating estima el rendimiento competitivo a partir
+            de resultados colectivos. No mide directamente la
+            aportación mecánica individual ni reconstruye el
+            Elo histórico exacto.
+          </p>
+        </div>
+      </details>
+
+      <!-- ESTADO DEL SISTEMA -->
+
+      {!hasRatedMatches && (
+        <div class="calibration-note">
+          <span class="calibration-dot"></span>
+
+          <p>
+            Los ratings actuales son estimaciones basadas en
+            los resultados históricos. Se actualizarán con las
+            nuevas partidas registradas.
+          </p>
+        </div>
+      )}
+
+      <!-- FOOTER -->
 
       <footer class="footer">
         <span class="footer-brand">
@@ -265,9 +549,9 @@ const rankedPlayers = [...players]
   </body>
 </html>
 
-<style>
+<style is:global>
   /* ========================================
-     VARIABLES Y ESTILOS GENERALES
+     VARIABLES
      ======================================== */
 
   :root {
@@ -278,40 +562,45 @@ const rankedPlayers = [...players]
 
     --accent: #d7bd36;
     --accent-light: #e8d36a;
-    --accent-muted: #a39e54;
+    --accent-muted: #b0a45d;
 
     --text: #e6e4d2;
     --muted: #aaa991;
 
     --wins: #b5cb89;
-    --losses: #c59379;
+    --losses: #d39a83;
 
     --display-font: "Anton", Impact, sans-serif;
     --heading-font: "Barlow Condensed", sans-serif;
     --mono-font: "DM Mono", monospace;
 
     font-family: Inter, sans-serif;
-
     color: var(--text);
     background: var(--background);
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
-
     color-scheme: dark;
   }
 
-  * {
+  *,
+  *::before,
+  *::after {
     box-sizing: border-box;
   }
 
+  html,
   body {
     margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%;
+  }
+
+  body {
     min-height: 100vh;
     min-height: 100dvh;
-
-    overflow-x: hidden;
     isolation: isolate;
   }
 
@@ -320,19 +609,20 @@ const rankedPlayers = [...players]
     color: #15160c;
   }
 
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+
   .sr-only {
     position: absolute;
-
     width: 1px;
     height: 1px;
-
     padding: 0;
     margin: -1px;
-
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
-
     border: 0;
   }
 
@@ -345,7 +635,6 @@ const rankedPlayers = [...players]
   .vignette {
     position: fixed;
     inset: 0;
-
     pointer-events: none;
     z-index: -1;
   }
@@ -385,65 +674,69 @@ const rankedPlayers = [...players]
   }
 
   /* ========================================
-     CONTENEDOR PRINCIPAL
+     CONTENEDOR
      ======================================== */
 
-  .shell {
-    width: min(1240px, calc(100% - 64px));
+  main.shell {
+    display: block;
+    width: calc(100% - 48px);
+    max-width: 1180px;
+    min-width: 0;
     margin: 0 auto;
-    padding-top: 32px;
+    padding: 32px 0 0;
   }
 
   /* ========================================
-     HERO ILUSTRADO
+     HERO
      ======================================== */
 
-  .hero-banner {
+  .shell > .hero-banner {
     position: relative;
-
-    overflow: hidden;
-    isolation: isolate;
-
-    background: #292b17;
-
-    border: 1px solid #6d633a;
-    border-bottom: 0;
-
-    box-shadow:
-      0 18px 65px #0005,
-      0 0 50px #c4aa2910;
-  }
-
-  .hero-image {
     display: block;
 
     width: 100%;
-    height: auto;
+    max-width: 100%;
 
-    object-fit: contain;
+    margin: 0;
+    padding: 0;
+
+    overflow: hidden;
+
+    background: #242619;
+
+    border: 1px solid #5c542e;
+    border-bottom: 0;
+
+    box-shadow: 0 18px 65px #0005;
   }
 
-  .hero-banner::after {
-    content: "";
+  .hero-banner > .hero-image {
+    display: block;
 
-    position: absolute;
-    inset: 0;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
 
-    pointer-events: none;
+    margin: 0;
+    padding: 0;
 
-    box-shadow: inset 0 0 35px #0003;
+    object-fit: contain;
   }
 
   /* ========================================
      LEADERBOARD
      ======================================== */
 
-  .leaderboard {
+  .shell > .leaderboard {
     position: relative;
 
-    margin-top: 0;
+    width: 100%;
+    min-width: 0;
+
+    margin: 0;
 
     background: #191d13;
+
     border: 1px solid var(--border);
     border-top: 0;
 
@@ -452,18 +745,17 @@ const rankedPlayers = [...players]
 
   .board-heading {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: space-between;
 
     gap: 20px;
-    padding: 26px 28px;
+    padding: 24px 26px;
 
-    background:
-      linear-gradient(
-        110deg,
-        #292c1b,
-        #1c2015 65%
-      );
+    background: linear-gradient(
+      110deg,
+      #292c1b,
+      #1c2015 65%
+    );
   }
 
   .board-title {
@@ -484,39 +776,61 @@ const rankedPlayers = [...players]
 
   .indicator {
     display: inline-block;
-
     width: 6px;
     height: 6px;
-
     background: var(--accent);
-
     box-shadow: 0 0 9px #d7bd3650;
   }
 
   h2 {
     margin: 0;
-
     font: 800 39px/1 var(--heading-font);
     letter-spacing: 1px;
-
     color: var(--text);
   }
 
-  .sort-note {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    padding-bottom: 4px;
-
-    font: 10px var(--mono-font);
+  .board-description {
+    margin: 7px 0 0;
+    font-size: 11px;
     color: var(--muted);
-    letter-spacing: 0.8px;
   }
 
-  .sort-note svg {
+  /* SISTEMA DE CLASIFICACIÓN */
+
+  .ranking-system {
+    display: flex;
+    align-items: center;
+    gap: 11px;
     flex-shrink: 0;
+
+    padding: 10px 13px;
+
+    border: 1px solid #6e643944;
+    background: #d7bd3608;
+  }
+
+  .ranking-system-icon {
+    display: grid;
+    place-items: center;
     color: var(--accent);
+  }
+
+  .ranking-system-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ranking-system-copy strong {
+    font: 800 16px/1 var(--heading-font);
+    letter-spacing: 0.7px;
+    color: var(--accent-light);
+  }
+
+  .ranking-system-copy > span {
+    font: 8px var(--mono-font);
+    letter-spacing: 1.2px;
+    color: var(--muted);
   }
 
   /* ========================================
@@ -525,50 +839,66 @@ const rankedPlayers = [...players]
 
   .table-scroll {
     width: 100%;
+    max-width: 100%;
     overflow-x: auto;
   }
 
   .ranking-table {
     width: 100%;
-
     border-collapse: collapse;
     table-layout: fixed;
   }
 
-  thead {
+  .ranking-table thead {
     background: #30331f;
   }
 
-  th {
-    height: 45px;
-    padding: 0 12px;
+  .ranking-table th {
+    height: 43px;
+    padding: 0 10px;
 
     text-align: center;
 
     font: 500 10px var(--mono-font);
-    letter-spacing: 1.1px;
+    letter-spacing: 0.8px;
     color: #b5b49a;
 
     border-top: 1px solid #4b4d30;
     border-bottom: 1px solid #4b4d30;
   }
 
-  .position-heading {
-    width: 90px;
+  .ranking-table .position-heading {
+    width: 76px;
   }
 
-  .name-heading {
+  .ranking-table .name-heading {
     text-align: left;
   }
 
-  .number-heading {
-    width: 135px;
+  .ranking-table .number-heading {
+    width: 100px;
   }
 
-  .rate-heading {
-    width: 210px;
+  .ranking-table .rate-heading {
+    width: 150px;
+    padding-right: 24px;
     text-align: right;
-    padding-right: 28px;
+  }
+
+  .ranking-table .rating-heading {
+    width: 145px;
+    padding-right: 26px;
+    text-align: right;
+    color: var(--accent-light);
+    background: #d7bd3608;
+    border-left: 1px solid #ffffff08;
+  }
+
+  .rating-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
   }
 
   .mobile-label {
@@ -576,12 +906,11 @@ const rankedPlayers = [...players]
   }
 
   /* ========================================
-     FILAS DE JUGADORES
+     FILAS
      ======================================== */
 
   .player-row {
     background: #1f2418;
-
     transition: background 150ms ease;
   }
 
@@ -593,49 +922,48 @@ const rankedPlayers = [...players]
     background: #2d3220;
   }
 
-  td {
+  .ranking-table td {
     height: 88px;
-    padding: 14px 12px;
-
+    padding: 13px 10px;
     border-bottom: 1px solid #363b26;
+    vertical-align: middle;
   }
 
   .player-row:last-child td {
-    border-bottom: none;
+    border-bottom: 0;
   }
+
+  /* POSICIÓN */
 
   .position-cell {
     position: relative;
-
     text-align: center;
   }
 
   .rank {
     font-family: var(--display-font);
-    font-size: 32px;
+    font-size: 29px;
     line-height: 1;
-
     color: #90967b;
     letter-spacing: -0.5px;
   }
 
   /* ========================================
-     IDENTIDAD DEL JUGADOR
+     JUGADOR
      ======================================== */
 
   .player-identity {
     display: flex;
     align-items: center;
-    gap: 16px;
-
+    gap: 14px;
     min-width: 0;
   }
 
   .avatar {
     position: relative;
 
-    width: 48px;
-    height: 48px;
+    width: 46px;
+    height: 46px;
 
     flex-shrink: 0;
 
@@ -665,13 +993,12 @@ const rankedPlayers = [...players]
       inset 0 0 0 3px #10160f60,
       2px 2px 0 #0003;
 
-    font: 800 20px var(--heading-font);
+    font: 800 19px var(--heading-font);
     color: #e2e9cf;
   }
 
   .avatar::after {
     content: "";
-
     position: absolute;
     inset: 0;
 
@@ -692,31 +1019,98 @@ const rankedPlayers = [...players]
 
   .player-info {
     min-width: 0;
-
     display: flex;
     flex-direction: column;
     gap: 5px;
   }
 
+  .player-name-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   .player-name {
-    font-family: var(--heading-font);
-    font-weight: 700;
-    font-size: 24px;
+    min-width: 0;
+
+    font: 700 24px/1 var(--heading-font);
 
     letter-spacing: 0.6px;
     text-transform: uppercase;
-
     overflow-wrap: anywhere;
   }
 
+  .leader-crown {
+    flex-shrink: 0;
+    color: var(--accent);
+  }
+
+  .player-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .competitive-rank {
+    font: 9px/1.4 var(--mono-font);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+
+    color: var(--rank-color, var(--muted));
+  }
+
+  .leader-tag {
+    font: 500 8px/1 var(--mono-font);
+    color: var(--accent-light);
+    letter-spacing: 0.5px;
+
+    padding: 3px 5px;
+
+    background: #d7bd3612;
+    border: 1px solid #d7bd3633;
+  }
+
   /* ========================================
-     VICTORIAS Y DERROTAS INDIVIDUALES
+     RESULTADOS RECIENTES
+     ======================================== */
+
+  .recent-results {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    margin-top: 2px;
+  }
+
+  .result-dot {
+    width: 15px;
+    height: 15px;
+
+    display: grid;
+    place-items: center;
+
+    font: 500 8px var(--mono-font);
+  }
+
+  .result-win {
+    color: #c5d9a1;
+    background: #526b353d;
+    border: 1px solid #758b4555;
+  }
+
+  .result-loss {
+    color: #dfa08a;
+    background: #864e3933;
+    border: 1px solid #a05e414f;
+  }
+
+  /* ========================================
+     VICTORIAS Y DERROTAS
      ======================================== */
 
   .number {
     text-align: center;
-
-    font: 500 18px var(--mono-font);
+    font: 500 17px var(--mono-font);
     font-variant-numeric: tabular-nums;
   }
 
@@ -732,33 +1126,30 @@ const rankedPlayers = [...players]
      WIN RATE
      ======================================== */
 
-  .rate-cell {
-    padding-right: 28px;
+  .ranking-table .rate-cell {
+    padding-right: 24px;
     text-align: right;
   }
 
   .rate-value {
-    font: 700 28px/1 var(--heading-font);
-
-    letter-spacing: 0.5px;
+    font: 700 26px/1 var(--heading-font);
+    letter-spacing: 0.3px;
     color: #d4d8ba;
-
     font-variant-numeric: tabular-nums;
   }
 
   .rate-value small {
-    font-size: 15px;
+    font-size: 13px;
     margin-left: 2px;
-
     color: var(--muted);
   }
 
   .rate-track {
     width: 100%;
-    max-width: 130px;
-    height: 5px;
+    max-width: 95px;
+    height: 4px;
 
-    margin: 10px 0 0 auto;
+    margin: 9px 0 0 auto;
 
     background: #3b422b;
     overflow: hidden;
@@ -767,12 +1158,65 @@ const rankedPlayers = [...players]
   .rate-track > span {
     display: block;
     height: 100%;
-
     background: linear-gradient(
       90deg,
       #747e40,
       #a7ad68
     );
+  }
+
+  /* ========================================
+     ELO INDIVIDUAL
+     ======================================== */
+
+  .ranking-table .rating-cell {
+    padding-right: 26px;
+    text-align: right;
+    border-left: 1px solid #ffffff08;
+    background: #d7bd3605;
+  }
+
+  .rating-value {
+    display: block;
+
+    font: 800 34px/1 var(--heading-font);
+
+    color: #dfe1c9;
+    letter-spacing: 0.5px;
+
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rating-change {
+    display: block;
+
+    margin-top: 5px;
+
+    font: 500 10px var(--mono-font);
+    color: var(--muted);
+
+    white-space: nowrap;
+  }
+
+  .rating-change.positive {
+    color: var(--wins);
+  }
+
+  .rating-change.negative {
+    color: var(--losses);
+  }
+
+  .rating-change.initial {
+    font-size: 8px;
+    letter-spacing: 0.6px;
+    color: #a3a58b;
+  }
+
+  .provisional-tag {
+    display: block;
+    margin-top: 5px;
+    font: 7px var(--mono-font);
+    color: var(--muted);
   }
 
   /* ========================================
@@ -798,9 +1242,7 @@ const rankedPlayers = [...players]
 
   .champion .position-cell::before {
     content: "";
-
     position: absolute;
-
     top: 0;
     bottom: 0;
     left: 0;
@@ -808,26 +1250,25 @@ const rankedPlayers = [...players]
     width: 4px;
 
     background: var(--accent);
-
     box-shadow: 0 0 12px #d7bd3640;
   }
 
   .champion .rank {
     color: var(--accent);
-    font-size: 38px;
+    font-size: 35px;
   }
 
   .champion .avatar {
     border-color: #bca64b;
-
-    box-shadow:
-      inset 0 0 0 3px #10160f60,
-      0 0 14px #d7bd3610;
   }
 
   .champion .player-name,
-  .champion .rate-value {
+  .champion .rating-value {
     color: var(--accent-light);
+  }
+
+  .champion .rating-cell {
+    background: #d7bd3609;
   }
 
   .champion .rate-track > span {
@@ -838,22 +1279,6 @@ const rankedPlayers = [...players]
     );
   }
 
-  .leader-tag {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-
-    font: 500 9px var(--mono-font);
-    color: #c8b966;
-    letter-spacing: 0.8px;
-  }
-
-  .leader-tag svg {
-    flex-shrink: 0;
-  }
-
-  /* SEGUNDO Y TERCER PUESTO */
-
   .second-place .rank {
     color: #c5c7b4;
   }
@@ -862,13 +1287,9 @@ const rankedPlayers = [...players]
     color: #bda17d;
   }
 
-  /* ESTADO VACÍO */
-
-  .empty-state {
+  .ranking-table .empty-state {
     padding: 45px 20px;
-
     text-align: center;
-
     color: var(--muted);
     font: 11px var(--mono-font);
     letter-spacing: 1px;
@@ -885,18 +1306,170 @@ const rankedPlayers = [...players]
     flex-wrap: wrap;
 
     gap: 8px;
-    padding: 16px 28px;
+    padding: 15px 26px;
 
     font: 9px var(--mono-font);
-    color: #aaa990;
-    letter-spacing: 0.3px;
+    color: var(--muted);
+
+    letter-spacing: 0.5px;
 
     border-top: 1px solid var(--border);
     background: #171b11;
   }
 
+  .board-footer-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .footer-indicator {
+    width: 5px;
+    height: 5px;
+    background: var(--accent);
+  }
+
   .board-version {
-    color: #8d9172;
+    color: #969b7b;
+  }
+
+  /* ========================================
+     INFORMACIÓN DESPLEGABLE
+     ======================================== */
+
+  .ranking-info {
+    margin-top: 15px;
+
+    background: #1b2015;
+    border: 1px solid #3d422c;
+  }
+
+  .ranking-info summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding: 15px 18px;
+
+    cursor: pointer;
+    list-style: none;
+
+    font-size: 12px;
+    color: #b5baa2;
+
+    transition: background 150ms ease;
+  }
+
+  .ranking-info summary:hover {
+    background: #262c1d;
+  }
+
+  .ranking-info summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .info-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .info-title svg {
+    color: var(--accent-muted);
+    flex-shrink: 0;
+  }
+
+  .chevron {
+    color: var(--muted);
+    transition: transform 150ms ease;
+  }
+
+  .ranking-info[open] .chevron {
+    transform: rotate(180deg);
+  }
+
+  .ranking-info-content {
+    padding: 0 18px 20px;
+    color: #b9bba9;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  .ranking-info-content > p {
+    margin: 0 0 20px;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .info-item {
+    min-width: 0;
+    padding: 16px;
+
+    background: #ffffff03;
+    border: 1px solid #ffffff0c;
+  }
+
+  .info-item strong {
+    font: 700 18px var(--heading-font);
+    letter-spacing: 0.5px;
+    color: var(--accent-light);
+  }
+
+  .info-item p {
+    margin: 8px 0 0;
+  }
+
+  .info-item code {
+    display: block;
+    margin-top: 12px;
+    padding: 9px 10px;
+
+    font: 10px/1.6 var(--mono-font);
+    color: #d4d9bc;
+    background: #11150e;
+
+    overflow-wrap: anywhere;
+  }
+
+  .ranking-info-content .info-notice {
+    margin: 18px 0 0;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  /* ========================================
+     CALIBRACIÓN
+     ======================================== */
+
+  .calibration-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+
+    margin: 15px 2px 0;
+
+    color: #a8aa91;
+    font-size: 10px;
+    line-height: 1.7;
+  }
+
+  .calibration-note p {
+    margin: 0;
+  }
+
+  .calibration-dot {
+    width: 5px;
+    height: 5px;
+    flex-shrink: 0;
+
+    margin-top: 6px;
+
+    background: var(--accent-muted);
   }
 
   /* ========================================
@@ -911,7 +1484,7 @@ const rankedPlayers = [...players]
 
     gap: 12px;
 
-    margin: 28px 0 25px;
+    margin: 25px 0;
     padding: 18px 0;
 
     border-top: 1px solid #b3aa6025;
@@ -931,34 +1504,62 @@ const rankedPlayers = [...players]
      ======================================== */
 
   @media (max-width: 850px) {
-    .shell {
-      width: calc(100% - 36px);
-      padding-top: 18px;
+    main.shell {
+      width: calc(100% - 32px);
+      padding-top: 20px;
     }
 
     .board-heading {
       padding: 22px;
     }
 
-    .position-heading {
-      width: 65px;
+    .ranking-table .position-heading {
+      width: 60px;
     }
 
-    .number-heading {
-      width: 95px;
+    .ranking-table .number-heading {
+      width: 80px;
     }
 
-    .rate-heading {
-      width: 150px;
-      padding-right: 22px;
+    .ranking-table .rate-heading {
+      width: 110px;
+      padding-right: 17px;
     }
 
-    .rate-cell {
-      padding-right: 22px;
+    .ranking-table .rate-cell {
+      padding-right: 17px;
+    }
+
+    .ranking-table .rating-heading {
+      width: 110px;
+      padding-right: 17px;
+    }
+
+    .ranking-table .rating-cell {
+      padding-right: 17px;
     }
 
     .player-name {
       font-size: 22px;
+    }
+
+    .player-identity {
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 38px;
+      height: 38px;
+      font-size: 16px;
+    }
+
+    .rating-value {
+      font-size: 29px;
+    }
+
+    .ranking-table th {
+      font-size: 9px;
+      letter-spacing: 0.3px;
     }
   }
 
@@ -967,30 +1568,20 @@ const rankedPlayers = [...players]
      ======================================== */
 
   @media (max-width: 600px) {
-    .shell {
+    main.shell {
       width: calc(100% - 20px);
-      padding-top: 10px;
-    }
-
-    .hero-banner {
-      border-color: #554f30;
-    }
-
-    .hero-image {
-      width: 100%;
-      height: auto;
-      object-fit: contain;
+      padding-top: 12px;
     }
 
     .board-heading {
-      padding: 20px 14px;
+      padding: 18px 13px;
       gap: 8px;
     }
 
     .board-kicker {
       font-size: 8px;
-      letter-spacing: 1.2px;
-      gap: 6px;
+      letter-spacing: 1px;
+      gap: 5px;
     }
 
     .indicator {
@@ -999,41 +1590,64 @@ const rankedPlayers = [...players]
     }
 
     h2 {
-      font-size: 30px;
-      letter-spacing: 0.6px;
+      font-size: 29px;
+      letter-spacing: 0.4px;
     }
 
-    .sort-note {
-      font-size: 7px;
+    .board-description {
+      font-size: 9px;
+      line-height: 1.5;
+    }
+
+    .ranking-system {
+      padding: 8px;
+      gap: 6px;
+    }
+
+    .ranking-system-icon svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .ranking-system-copy strong {
+      font-size: 12px;
       letter-spacing: 0.2px;
-      gap: 4px;
     }
 
-    .sort-note svg {
-      width: 12px;
-      height: 12px;
+    .ranking-system-copy > span {
+      font-size: 6px;
+      letter-spacing: 0.4px;
     }
 
-    th {
+    .ranking-table th {
       height: 38px;
+      padding: 0 3px;
 
       font-size: 8px;
-      letter-spacing: 0.3px;
-
-      padding: 0 4px;
+      letter-spacing: 0;
     }
 
-    .position-heading {
-      width: 40px;
+    .ranking-table .position-heading {
+      width: 32px;
     }
 
-    .number-heading {
-      width: 38px;
+    .ranking-table .number-heading {
+      width: 29px;
     }
 
-    .rate-heading {
-      width: 77px;
-      padding-right: 12px;
+    .ranking-table .rate-heading {
+      width: 59px;
+      padding-right: 7px;
+    }
+
+    .ranking-table .rating-heading {
+      width: 69px;
+      padding-right: 9px;
+    }
+
+    .rating-label svg {
+      width: 9px;
+      height: 9px;
     }
 
     .desktop-label {
@@ -1041,10 +1655,11 @@ const rankedPlayers = [...players]
 
       width: 1px;
       height: 1px;
+      padding: 0;
+      margin: -1px;
 
       overflow: hidden;
       clip-path: inset(50%);
-
       white-space: nowrap;
     }
 
@@ -1052,17 +1667,17 @@ const rankedPlayers = [...players]
       display: inline;
     }
 
-    td {
-      height: 75px;
-      padding: 10px 4px;
+    .ranking-table td {
+      height: 76px;
+      padding: 10px 3px;
     }
 
     .rank {
-      font-size: 23px;
+      font-size: 21px;
     }
 
     .champion .rank {
-      font-size: 27px;
+      font-size: 24px;
     }
 
     .champion .position-cell::before {
@@ -1070,64 +1685,129 @@ const rankedPlayers = [...players]
     }
 
     .player-identity {
-      gap: 8px;
+      gap: 7px;
     }
 
     .avatar {
-      width: 32px;
-      height: 34px;
-
-      font-size: 14px;
+      display: none;
     }
 
     .player-name {
-      font-size: 17px;
-      line-height: 1.1;
+      font-size: 18px;
       letter-spacing: 0.2px;
+      line-height: 1.1;
+    }
+
+    .player-name-line {
+      gap: 4px;
+    }
+
+    .leader-crown {
+      width: 12px;
+      height: 12px;
+    }
+
+    .player-meta {
+      gap: 4px;
+    }
+
+    .competitive-rank {
+      font-size: 7px;
+      letter-spacing: 0;
     }
 
     .leader-tag {
       font-size: 6px;
-      gap: 3px;
-      letter-spacing: 0.1px;
-    }
-
-    .leader-tag svg {
-      width: 9px;
-      height: 9px;
+      padding: 2px 3px;
     }
 
     .number {
-      font-size: 13px;
+      font-size: 12px;
     }
 
-    .rate-cell {
-      padding-right: 12px;
+    .recent-results {
+      gap: 2px;
+    }
+
+    .result-dot {
+      width: 12px;
+      height: 12px;
+      font-size: 7px;
+    }
+
+    .ranking-table .rate-cell {
+      padding-right: 7px;
     }
 
     .rate-value {
-      font-size: 21px;
+      font-size: 18px;
     }
 
     .rate-value small {
-      font-size: 11px;
+      font-size: 10px;
+      margin-left: 1px;
     }
 
     .rate-track {
-      max-width: 50px;
-      height: 4px;
-      margin-top: 7px;
+      max-width: 43px;
+      height: 3px;
+      margin-top: 6px;
+    }
+
+    .ranking-table .rating-cell {
+      padding-right: 9px;
+    }
+
+    .rating-value {
+      font-size: 25px;
+      letter-spacing: 0.1px;
+    }
+
+    .rating-change {
+      font-size: 8px;
+    }
+
+    .rating-change.initial {
+      font-size: 6px;
+      letter-spacing: 0;
+    }
+
+    .provisional-tag {
+      font-size: 6px;
     }
 
     .board-footer {
       padding: 12px;
-
       font-size: 7px;
       line-height: 1.6;
+      letter-spacing: 0;
     }
 
     .board-version {
       display: none;
+    }
+
+    .ranking-info summary {
+      padding: 13px;
+      font-size: 11px;
+    }
+
+    .ranking-info-content {
+      padding: 0 13px 15px;
+      font-size: 11px;
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .info-item {
+      padding: 12px;
+    }
+
+    .calibration-note {
+      font-size: 9px;
     }
 
     .footer {
@@ -1140,145 +1820,50 @@ const rankedPlayers = [...players]
     }
   }
 
-  /* PANTALLAS PEQUEÑAS */
+  /* PANTALLAS MUY PEQUEÑAS */
 
   @media (max-width: 360px) {
-    .avatar {
-      display: none;
+    .ranking-table {
+      min-width: 300px;
+    }
+
+    .ranking-table .position-heading {
+      width: 28px;
+    }
+
+    .ranking-table .number-heading {
+      width: 25px;
+    }
+
+    .ranking-table .rate-heading {
+      width: 53px;
+    }
+
+    .ranking-table .rating-heading {
+      width: 60px;
     }
 
     .player-name {
       font-size: 16px;
     }
 
-    .position-heading {
-      width: 34px;
+    .rating-value {
+      font-size: 22px;
     }
 
-    .number-heading {
-      width: 32px;
-    }
-
-    .rate-heading {
-      width: 70px;
+    .ranking-system-icon {
+      display: none;
     }
   }
 
   /* ACCESIBILIDAD */
 
   @media (prefers-reduced-motion: reduce) {
-    * {
+    *,
+    *::before,
+    *::after {
       transition: none !important;
       animation: none !important;
-    }
-  }
-</style>
-<style is:global>
-  html {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    background: #14160e;
-  }
-
-  body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    min-height: 100vh;
-  }
-
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-  }
-
-  main.shell {
-    display: block;
-    width: calc(100% - 48px);
-    max-width: 1180px;
-    min-width: 0;
-    margin: 0 auto;
-    padding: 32px 0 0;
-  }
-
-  .shell > .hero-banner {
-    display: block;
-    position: relative;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    height: auto;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    border: 1px solid #5c542e;
-    border-bottom: none;
-    background: #242619;
-  }
-
-  .hero-banner > img.hero-image {
-    display: block;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    height: auto !important;
-    margin: 0;
-    padding: 0;
-    object-fit: contain;
-  }
-
-  .shell > .leaderboard {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    margin: 0;
-    border: 1px solid #45482b;
-    border-top: none;
-    background: #191d13;
-  }
-
-  .hero-banner::before,
-  .hero-banner::after {
-    display: none;
-  }
-
-  .leaderboard .hazard-stripe {
-    display: none;
-  }
-
-  .table-scroll {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: auto;
-  }
-
-  .ranking-table {
-    width: 100%;
-    table-layout: fixed;
-    border-collapse: collapse;
-  }
-
-  @media (max-width: 850px) {
-    main.shell {
-      width: calc(100% - 32px);
-      padding-top: 20px;
-    }
-  }
-
-  @media (max-width: 600px) {
-    main.shell {
-      width: calc(100% - 20px);
-      padding-top: 12px;
-    }
-
-    .hero-banner {
-      margin: 0;
-    }
-
-    .board-heading {
-      padding: 18px 14px;
     }
   }
 </style>
