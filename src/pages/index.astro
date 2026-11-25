@@ -2,17 +2,23 @@
 ---
 import { players } from "../data/players";
 
-const rankedPlayers = [...players].sort((a, b) => {
-  const aTotal = a.wins + a.losses;
-  const bTotal = b.wins + b.losses;
-  const aRate = aTotal ? a.wins / aTotal : 0;
-  const bRate = bTotal ? b.wins / bTotal : 0;
-  return bRate - aRate || b.wins - a.wins || a.name.localeCompare(b.name);
-});
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-const totalWins = players.reduce((sum, player) => sum + player.wins, 0);
-const totalLosses = players.reduce((sum, player) => sum + player.losses, 0);
-const totalGames = totalWins + totalLosses;
+const rankedPlayers = [...players]
+  .map((player) => {
+    const total = player.wins + player.losses;
+
+    return {
+      ...player,
+      rate: total ? (player.wins / total) * 100 : 0,
+    };
+  })
+  .sort(
+    (a, b) =>
+      b.rate - a.rate ||
+      b.wins - a.wins ||
+      a.name.localeCompare(b.name)
+  );
 ---
 
 <!doctype html>
@@ -20,157 +26,280 @@ const totalGames = totalWins + totalLosses;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#111211" />
-    <meta name="description" content="La Liga del Lefsito — Left 4 Dead 2." />
-    <title>La Liga del Lefsito</title>
+    <meta name="theme-color" content="#17190f" />
 
-    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <meta
+      name="description"
+      content="La Liga del Lefsito — Clasificación de Left 4 Dead 2."
+    />
+
+    <title>La Liga del Lefsito | L4D2</title>
+
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href={`${base}/favicon.svg`}
+    />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
   </head>
 
   <body>
-    <div class="noise"></div>
+    <!-- ATMÓSFERA DE FONDO -->
+
+    <div class="background" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="vignette" aria-hidden="true"></div>
 
     <main class="shell">
-      <header class="topbar">
-        <a class="brand" href="#" aria-label="Inicio de La Liga del Lefsito">
-          <span class="brand-mark">L4D<span>2</span></span>
-          <span class="brand-caption">LA ÚLTIMA RESISTENCIA<br />REGISTRO DE LA COMUNIDAD</span>
-        </a>
+    <header class="hero-banner">
+      <img
+        src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/images/lefsito.png`}
+        alt="La Liga del Lefsito — Temporada 01"
+        class="hero-image"
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
+      />
 
-        <div class="status">
-          <span class="status-dot"></span>
-          REGISTRO DE CAMPAÑA
-          <span class="status-divider">/</span>
-          TEMPORADA 01
-        </div>
-      </header>
+      <!-- LEADERBOARD -->
 
-      <section class="hero">
-        <div class="hero-copy">
-          <div class="eyebrow">
-            <span class="eyebrow-line"></span>
-            BASE DE DATOS DEL REFUGIO
-            <span class="eyebrow-line"></span>
-          </div>
+      <section
+        class="leaderboard"
+        aria-labelledby="leaderboard-title"
+      >
+        <div class="board-heading">
+          <div class="board-title">
+            <span class="board-kicker">
+              <span class="indicator"></span>
+              SURVIVOR RANKING
+            </span>
 
-          <h1>LA LIGA DEL<br /><em>LEFSITO</em></h1>
-          <p class="hero-description">De camino a Navidad.</p>
-        </div>
-
-        <div class="hero-stamp" aria-hidden="true">
-          <div class="stamp-ring">
-            <span>SIN<br />PIEDAD</span>
-            <b>★</b>
-          </div>
-          <small>DESDE 2009 · ZONA DE RIESGO</small>
-        </div>
-      </section>
-
-      <section class="stats-strip" aria-label="Estadísticas generales">
-        <div class="strip-item">
-          <span class="strip-label">SUPERVIVIENTES</span>
-          <strong>{String(players.length).padStart(2, "0")}</strong>
-        </div>
-
-        <div class="strip-item">
-          <span class="strip-label">VICTORIAS TOTALES</span>
-          <strong>{String(totalWins).padStart(2, "0")}</strong>
-        </div>
-
-        <div class="strip-item">
-          <span class="strip-label">DERROTAS TOTALES</span>
-          <strong>{String(totalLosses).padStart(2, "0")}</strong>
-        </div>
-
-        <div class="strip-item">
-          <span class="strip-label">PARTIDAS JUGADAS</span>
-          <strong>{String(totalGames).padStart(2, "0")}</strong>
-        </div>
-      </section>
-
-      <section class="leaderboard-section">
-        <div class="section-heading">
-          <div>
-            <div class="eyebrow small">
-              <span class="red-square"></span>
-              LOS SUPERVIVIENTES
-            </div>
-            <h2>CLASIFICACIÓN <span>DE JUGADORES</span></h2>
+            <h2 id="leaderboard-title">LEADERBOARD</h2>
           </div>
 
           <div class="sort-note">
-            <span class="sort-icon">↕</span>
-            ORDENADO POR % DE VICTORIAS
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <path d="M4 6h16M4 12h11M4 18h6" />
+            </svg>
+
+            <span>POR % DE VICTORIAS</span>
           </div>
         </div>
 
-        <div class="table-wrap">
-          <div class="table-head">
-            <span class="player-col">JUGADOR</span>
-            <span>VICTORIAS</span>
-            <span>DERROTAS</span>
-            <span class="rate-col">% VICTORIAS</span>
-          </div>
+        <!-- TABLA DE CLASIFICACIÓN -->
 
-          <div class="player-list">
-            {rankedPlayers.map((player, index) => {
-              const total = player.wins + player.losses;
-              const rate = total ? (player.wins / total) * 100 : 0;
+        <div class="table-scroll">
+          <table class="ranking-table">
+            <thead>
+              <tr>
+                <th scope="col" class="position-heading">
+                  POS.
+                </th>
 
-              return (
-                <article class="player-row">
-                  <div class="player-identity">
-                    <span class="rank">{String(index + 1).padStart(2, "0")}</span>
+                <th scope="col" class="name-heading">
+                  SUPERVIVIENTE
+                </th>
 
-                    <div class="avatar" style={`--avatar-color:${player.color}`}>
-                      <span>{player.initials}</span>
-                      <i></i>
+                <th scope="col" class="number-heading">
+                  <span class="desktop-label">VICTORIAS</span>
+                  <span class="mobile-label" aria-hidden="true">W</span>
+                </th>
+
+                <th scope="col" class="number-heading">
+                  <span class="desktop-label">DERROTAS</span>
+                  <span class="mobile-label" aria-hidden="true">L</span>
+                </th>
+
+                <th scope="col" class="rate-heading">
+                  WIN RATE
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {rankedPlayers.map((player, index) => (
+                <tr
+                  class:list={[
+                    "player-row",
+                    {
+                      champion: index === 0,
+                      "second-place": index === 1,
+                      "third-place": index === 2,
+                    },
+                  ]}
+                >
+                  <!-- POSICIÓN -->
+
+                  <td class="position-cell">
+                    <span class="rank">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                  </td>
+
+                  <!-- JUGADOR -->
+
+                  <td class="identity-cell">
+                    <div class="player-identity">
+                      <div
+                        class="avatar"
+                        style={`--player-color: ${player.color}`}
+                        aria-hidden="true"
+                      >
+                        <span>{player.initials}</span>
+                      </div>
+
+                      <div class="player-info">
+                        <span class="player-name">
+                          {player.name}
+                        </span>
+
+                        {index === 0 && (
+                          <span class="leader-tag">
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="1.8"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="m2 7 5 5 5-8 5 8 5-5-3 13H5Z" />
+                            </svg>
+
+                            LÍDER DE LA LIGA
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- VICTORIAS -->
+
+                  <td class="number wins">
+                    {player.wins}
+                  </td>
+
+                  <!-- DERROTAS -->
+
+                  <td class="number losses">
+                    {player.losses}
+                  </td>
+
+                  <!-- PORCENTAJE DE VICTORIAS -->
+
+                  <td class="rate-cell">
+                    <div class="rate-value">
+                      {player.rate.toFixed(1)}<small>%</small>
                     </div>
 
-                    <span class="player-name">{player.name}</span>
-                  </div>
-
-                  <div class="number wins">{player.wins}</div>
-                  <div class="number losses">{player.losses}</div>
-
-                  <div class="rate-cell">
-                    <strong>{rate.toFixed(1)}<small>%</small></strong>
-                    <div class="rate-track">
-                      <span style={`width:${rate}%`}></span>
+                    <div
+                      class="rate-track"
+                      role="progressbar"
+                      aria-label={`Porcentaje de victorias de ${player.name}`}
+                      aria-valuenow={player.rate}
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    >
+                      <span style={`width: ${player.rate}%`}></span>
                     </div>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                  </td>
+                </tr>
+              ))}
+
+              {rankedPlayers.length === 0 && (
+                <tr>
+                  <td colspan="5" class="empty-state">
+                    NO HAY SUPERVIVIENTES REGISTRADOS.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
 
-        <p class="table-footnote">
-          <span>*</span>
-          PORCENTAJE DE VICTORIAS = VICTORIAS / (VICTORIAS + DERROTAS).
-          Sin partidas jugadas = 0,0%.
-        </p>
+        <!-- INFORMACIÓN DEL RANKING -->
+
+        <div class="board-footer">
+          <span>
+            WIN RATE = VICTORIAS / (VICTORIAS + DERROTAS) × 100
+          </span>
+
+          <span class="board-version">
+            L4D2 // V.01
+          </span>
+        </div>
       </section>
 
+      <!-- PIE DE PÁGINA -->
+
       <footer class="footer">
-        <span class="footer-mark">L4D2 <b>///</b> REGISTRO DE SUPERVIVIENTES</span>
-        <span>MANTÉN CERCA A TUS AMIGOS. Y MÁS CERCA TODAVÍA LA MUNICIÓN.</span>
-        <span class="footer-live"><i></i> REFUGIO ASEGURADO</span>
+        <span class="footer-brand">
+          LA LIGA DEL LEFSITO
+          <b>//</b>
+          LEFT 4 DEAD 2
+        </span>
+
+        <span class="footer-community">
+          2026 · COMMUNITY LEAGUE
+        </span>
       </footer>
     </main>
   </body>
 </html>
 
 <style>
+  /* ========================================
+     VARIABLES Y ESTILOS GENERALES
+     ======================================== */
+
   :root {
+    --background: #14160e;
+    --surface: #1c2015;
+    --surface-alt: #22271a;
+    --border: #45482b;
+
+    --accent: #d7bd36;
+    --accent-light: #e8d36a;
+    --accent-muted: #a39e54;
+
+    --text: #e6e4d2;
+    --muted: #aaa991;
+
+    --wins: #b5cb89;
+    --losses: #c59379;
+
+    --display-font: "Anton", Impact, sans-serif;
+    --heading-font: "Barlow Condensed", sans-serif;
+    --mono-font: "DM Mono", monospace;
+
     font-family: Inter, sans-serif;
-    color: #e9e8e1;
-    background: #111211;
+
+    color: var(--text);
+    background: var(--background);
+
     font-synthesis: none;
     text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+
+    color-scheme: dark;
   }
 
   * {
@@ -180,503 +309,976 @@ const totalGames = totalWins + totalLosses;
   body {
     margin: 0;
     min-height: 100vh;
-    background: radial-gradient(ellipse at 50% -20%, #33332d 0%, #191a17 42%, #10110f 78%);
+    min-height: 100dvh;
+
     overflow-x: hidden;
+    isolation: isolate;
   }
 
-  .noise {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    opacity: .055;
-    z-index: 5;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+  ::selection {
+    background: var(--accent);
+    color: #15160c;
   }
 
-  .shell {
-    width: min(1080px, calc(100% - 48px));
-    margin: 0 auto;
-  }
-
-  .topbar {
-    height: 82px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid #ffffff18;
-  }
-
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: inherit;
-    text-decoration: none;
-  }
-
-  .brand-mark {
-    font: 900 29px 'Barlow Condensed', sans-serif;
-    letter-spacing: -1px;
-    color: #e9e8e1;
-  }
-
-  .brand-mark span {
-    color: #e14c3d;
-  }
-
-  .brand-caption {
-    font: 500 8px/1.4 'DM Mono', monospace;
-    letter-spacing: 1.1px;
-    color: #85867d;
-  }
-
-  .status, .sort-note {
-    font: 10px 'DM Mono', monospace;
-    letter-spacing: 1.2px;
-    color: #a1a197;
-  }
-
-  .status-dot, .footer-live i {
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #d94b3c;
-    margin-right: 8px;
-    box-shadow: 0 0 10px #d94b3c88;
-  }
-
-  .status-divider {
-    padding: 0 10px;
-    color: #55564f;
-  }
-
-  .hero {
-    min-height: 290px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 48px 6px 42px;
-  }
-
-  .eyebrow {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #c75a4b;
-    font: 10px 'DM Mono', monospace;
-    letter-spacing: 2.2px;
-  }
-
-  .eyebrow-line {
-    height: 1px;
-    width: 22px;
-    background: #a8463b;
-  }
-
-  h1 {
-    font: 900 clamp(56px, 8vw, 88px)/.83 'Barlow Condensed', sans-serif;
-    letter-spacing: -2px;
-    margin: 22px 0 17px;
-    color: #f0efe8;
-  }
-
-  h1 em {
-    font-style: normal;
-    color: #d94e40;
-  }
-
-  .hero-description {
-    font-size: 12px;
-    color: #898a80;
-    letter-spacing: .15px;
-  }
-
-  .hero-stamp {
-    margin-right: 34px;
-    text-align: center;
-    transform: rotate(-10deg);
-    opacity: .78;
-  }
-
-  .stamp-ring {
-    width: 112px;
-    height: 112px;
-    border: 2px solid #a7493e;
-    border-radius: 50%;
-    outline: 1px dashed #a7493e;
-    outline-offset: 5px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    color: #bd5145;
-  }
-
-  .stamp-ring:before, .stamp-ring:after {
-    content: "";
+  .sr-only {
     position: absolute;
-    width: 125%;
+
+    width: 1px;
     height: 1px;
-    background: #a7493e;
-    opacity: .7;
-    transform: rotate(45deg);
-  }
 
-  .stamp-ring:after {
-    transform: rotate(-45deg);
-  }
+    padding: 0;
+    margin: -1px;
 
-  .stamp-ring span {
-    font: 900 22px/.82 'Barlow Condensed', sans-serif;
-    z-index: 1;
-  }
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
 
-  .stamp-ring b {
-    position: absolute;
-    bottom: 12px;
-    right: 14px;
-    font-size: 12px;
-  }
-
-  .hero-stamp small {
-    display: block;
-    margin-top: 14px;
-    font: 8px 'DM Mono', monospace;
-    letter-spacing: 1px;
-    color: #b95b4e;
-  }
-
-  .stats-strip {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    border: 1px solid #ffffff1b;
-    background: #ffffff06;
-    margin-bottom: 55px;
-  }
-
-  .strip-item {
-    padding: 15px 20px;
-    border-right: 1px solid #ffffff18;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .strip-item:last-child {
     border: 0;
   }
 
-  .strip-label {
-    font: 9px 'DM Mono', monospace;
-    letter-spacing: 1px;
-    color: #85867d;
+  /* ========================================
+     ATMÓSFERA
+     ======================================== */
+
+  .background,
+  .grain,
+  .vignette {
+    position: fixed;
+    inset: 0;
+
+    pointer-events: none;
+    z-index: -1;
   }
 
-  .strip-item strong {
-    font: 700 23px 'Barlow Condensed', sans-serif;
-    color: #e7e5dc;
+  .background {
+    background:
+      radial-gradient(
+        ellipse at 50% -15%,
+        #62572a 0%,
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse at 100% 30%,
+        #343b21 0%,
+        transparent 45%
+      ),
+      linear-gradient(
+        160deg,
+        #2d3020,
+        #1b1e13 45%,
+        #10130c 100%
+      );
   }
 
-  .section-heading {
+  .grain {
+    opacity: 0.16;
+
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' opacity='.55' filter='url(%23noise)'/%3E%3C/svg%3E");
+  }
+
+  .vignette {
+    background: radial-gradient(
+      ellipse at 50% 25%,
+      transparent 35%,
+      #0009 100%
+    );
+  }
+
+  /* ========================================
+     CONTENEDOR PRINCIPAL
+     ======================================== */
+
+  .shell {
+    width: min(1240px, calc(100% - 64px));
+    margin: 0 auto;
+    padding-top: 32px;
+  }
+
+  /* ========================================
+     HERO ILUSTRADO
+     ======================================== */
+
+  .hero-banner {
+    position: relative;
+
+    overflow: hidden;
+    isolation: isolate;
+
+    background: #292b17;
+
+    border: 1px solid #6d633a;
+    border-bottom: 0;
+
+    box-shadow:
+      0 18px 65px #0005,
+      0 0 50px #c4aa2910;
+  }
+
+  .hero-image {
+    display: block;
+
+    width: 100%;
+    height: auto;
+
+    object-fit: contain;
+  }
+
+  .hero-banner::after {
+    content: "";
+
+    position: absolute;
+    inset: 0;
+
+    pointer-events: none;
+
+    box-shadow: inset 0 0 35px #0003;
+  }
+
+  /* ========================================
+     LEADERBOARD
+     ======================================== */
+
+  .leaderboard {
+    position: relative;
+
+    margin-top: 0;
+
+    background: #191d13;
+    border: 1px solid var(--border);
+    border-top: 0;
+
+    box-shadow: 0 24px 70px #0005;
+  }
+
+  .board-heading {
     display: flex;
-    align-items: end;
+    align-items: flex-end;
     justify-content: space-between;
-    margin-bottom: 17px;
+
+    gap: 20px;
+    padding: 26px 28px;
+
+    background:
+      linear-gradient(
+        110deg,
+        #292c1b,
+        #1c2015 65%
+      );
   }
 
-  .eyebrow.small {
-    font-size: 9px;
-    letter-spacing: 1.8px;
+  .board-title {
+    min-width: 0;
+  }
+
+  .board-kicker {
+    display: flex;
+    align-items: center;
     gap: 8px;
+
+    font: 500 10px var(--mono-font);
+    color: var(--accent-muted);
+
+    letter-spacing: 2.4px;
+    margin-bottom: 7px;
   }
 
-  .red-square {
+  .indicator {
+    display: inline-block;
+
     width: 6px;
     height: 6px;
-    background: #d94e40;
-    display: inline-block;
+
+    background: var(--accent);
+
+    box-shadow: 0 0 9px #d7bd3650;
   }
 
   h2 {
-    font: 800 31px 'Barlow Condensed', sans-serif;
-    letter-spacing: .6px;
-    margin: 7px 0 0;
-  }
+    margin: 0;
 
-  h2 span {
-    color: #d94e40;
+    font: 800 39px/1 var(--heading-font);
+    letter-spacing: 1px;
+
+    color: var(--text);
   }
 
   .sort-note {
-    padding-bottom: 4px;
-    font-size: 9px;
-  }
-
-  .sort-icon {
-    color: #d94e40;
-    font-size: 14px;
-    margin-right: 6px;
-  }
-
-  .table-wrap {
-    border: 1px solid #ffffff20;
-    background: #171815;
-  }
-
-  .table-head, .player-row {
-    display: grid;
-    grid-template-columns: minmax(260px, 1fr) 120px 120px 180px;
+    display: flex;
     align-items: center;
+    gap: 8px;
+
+    padding-bottom: 4px;
+
+    font: 10px var(--mono-font);
+    color: var(--muted);
+    letter-spacing: 0.8px;
   }
 
-  .table-head {
-    min-height: 43px;
-    background: #22231f;
-    border-bottom: 1px solid #ffffff20;
-    color: #85867d;
-    font: 9px 'DM Mono', monospace;
-    letter-spacing: 1.2px;
-    padding: 0 22px;
+  .sort-note svg {
+    flex-shrink: 0;
+    color: var(--accent);
   }
 
-  .table-head>span:not(:first-child) {
+  /* ========================================
+     TABLA
+     ======================================== */
+
+  .table-scroll {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .ranking-table {
+    width: 100%;
+
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  thead {
+    background: #30331f;
+  }
+
+  th {
+    height: 45px;
+    padding: 0 12px;
+
     text-align: center;
+
+    font: 500 10px var(--mono-font);
+    letter-spacing: 1.1px;
+    color: #b5b49a;
+
+    border-top: 1px solid #4b4d30;
+    border-bottom: 1px solid #4b4d30;
   }
 
-  .table-head .rate-col {
-    text-align: right;
+  .position-heading {
+    width: 90px;
   }
+
+  .name-heading {
+    text-align: left;
+  }
+
+  .number-heading {
+    width: 135px;
+  }
+
+  .rate-heading {
+    width: 210px;
+    text-align: right;
+    padding-right: 28px;
+  }
+
+  .mobile-label {
+    display: none;
+  }
+
+  /* ========================================
+     FILAS DE JUGADORES
+     ======================================== */
 
   .player-row {
-    min-height: 72px;
-    padding: 0 22px;
-    border-bottom: 1px solid #ffffff10;
-    transition: background .2s;
+    background: #1f2418;
+
+    transition: background 150ms ease;
   }
 
-  .player-row:last-child {
-    border-bottom: 0;
+  .player-row:nth-child(even) {
+    background: #1a1e14;
   }
 
   .player-row:hover {
-    background: #ffffff08;
+    background: #2d3220;
   }
+
+  td {
+    height: 88px;
+    padding: 14px 12px;
+
+    border-bottom: 1px solid #363b26;
+  }
+
+  .player-row:last-child td {
+    border-bottom: none;
+  }
+
+  .position-cell {
+    position: relative;
+
+    text-align: center;
+  }
+
+  .rank {
+    font-family: var(--display-font);
+    font-size: 32px;
+    line-height: 1;
+
+    color: #90967b;
+    letter-spacing: -0.5px;
+  }
+
+  /* ========================================
+     IDENTIDAD DEL JUGADOR
+     ======================================== */
 
   .player-identity {
     display: flex;
     align-items: center;
+    gap: 16px;
+
     min-width: 0;
   }
 
-  .rank {
-    font: 10px 'DM Mono', monospace;
-    color: #62645c;
-    width: 34px;
-  }
-
   .avatar {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    border: 1px solid color-mix(in srgb, var(--avatar-color), transparent 25%);
-    background: radial-gradient(circle at 35% 25%, color-mix(in srgb, var(--avatar-color), white 15%), var(--avatar-color) 75%, #222 130%);
+    position: relative;
+
+    width: 48px;
+    height: 48px;
+
+    flex-shrink: 0;
+
     display: grid;
     place-items: center;
-    position: relative;
+
     overflow: hidden;
-    box-shadow: inset 0 0 0 3px #10110f, 0 0 0 1px #ffffff12;
+
+    background: linear-gradient(
+      145deg,
+      color-mix(
+        in srgb,
+        var(--player-color, #777d48),
+        #313e22 65%
+      ),
+      #20271a
+    );
+
+    border: 1px solid
+      color-mix(
+        in srgb,
+        var(--player-color, #777d48),
+        #566146 55%
+      );
+
+    box-shadow:
+      inset 0 0 0 3px #10160f60,
+      2px 2px 0 #0003;
+
+    font: 800 20px var(--heading-font);
+    color: #e2e9cf;
   }
 
-  .avatar:after {
+  .avatar::after {
     content: "";
+
     position: absolute;
     inset: 0;
-    background: linear-gradient(140deg, #ffffff35, transparent 48%, #0005);
+
+    background: linear-gradient(
+      135deg,
+      #ffffff10,
+      transparent 50%,
+      #0003
+    );
+
+    pointer-events: none;
   }
 
   .avatar span {
+    position: relative;
     z-index: 1;
-    font: 800 12px 'Barlow Condensed', sans-serif;
-    color: #171713;
-    text-shadow: 0 1px #ffffff55;
   }
 
-  .avatar i {
-    position: absolute;
-    bottom: -5px;
-    width: 25px;
-    height: 13px;
-    border-radius: 50% 50% 0 0;
-    background: #141510;
-    z-index: 1;
+  .player-info {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
   }
 
   .player-name {
-    font-size: 13px;
+    font-family: var(--heading-font);
     font-weight: 700;
-    letter-spacing: .2px;
-    margin-left: 13px;
-    color: #e7e6de;
+    font-size: 24px;
+
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+
+    overflow-wrap: anywhere;
   }
+
+  /* ========================================
+     VICTORIAS Y DERROTAS INDIVIDUALES
+     ======================================== */
 
   .number {
     text-align: center;
-    font: 500 15px 'DM Mono', monospace;
+
+    font: 500 18px var(--mono-font);
+    font-variant-numeric: tabular-nums;
   }
 
-  .wins { color: #a9c18c; }
-  .losses { color: #d27b6d; }
+  .wins {
+    color: var(--wins);
+  }
+
+  .losses {
+    color: var(--losses);
+  }
+
+  /* ========================================
+     WIN RATE
+     ======================================== */
 
   .rate-cell {
-    display: flex;
-    align-items: flex-end;
-    flex-direction: column;
-    gap: 7px;
+    padding-right: 28px;
+    text-align: right;
   }
 
-  .rate-cell strong {
-    font: 700 16px 'DM Mono', monospace;
-    color: #e9e8e1;
+  .rate-value {
+    font: 700 28px/1 var(--heading-font);
+
+    letter-spacing: 0.5px;
+    color: #d4d8ba;
+
+    font-variant-numeric: tabular-nums;
   }
 
-  .rate-cell small {
-    font-size: 10px;
-    color: #85867d;
+  .rate-value small {
+    font-size: 15px;
     margin-left: 2px;
+
+    color: var(--muted);
   }
 
   .rate-track {
-    height: 3px;
-    width: 76px;
-    background: #393a34;
+    width: 100%;
+    max-width: 130px;
+    height: 5px;
+
+    margin: 10px 0 0 auto;
+
+    background: #3b422b;
     overflow: hidden;
   }
 
-  .rate-track span {
-    height: 100%;
+  .rate-track > span {
     display: block;
-    background: #d94e40;
+    height: 100%;
+
+    background: linear-gradient(
+      90deg,
+      #747e40,
+      #a7ad68
+    );
   }
 
-  .table-footnote {
-    font: 9px 'DM Mono', monospace;
-    color: #73756c;
-    margin: 12px 0 0;
-    letter-spacing: .1px;
+  /* ========================================
+     PRIMER PUESTO
+     ======================================== */
+
+  .player-row.champion {
+    background: linear-gradient(
+      90deg,
+      #474326,
+      #33351e 60%,
+      #2a2e1b
+    );
   }
 
-  .table-footnote span {
-    color: #d94e40;
+  .player-row.champion:hover {
+    background: linear-gradient(
+      90deg,
+      #534c29,
+      #383b21
+    );
   }
+
+  .champion .position-cell::before {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    bottom: 0;
+    left: 0;
+
+    width: 4px;
+
+    background: var(--accent);
+
+    box-shadow: 0 0 12px #d7bd3640;
+  }
+
+  .champion .rank {
+    color: var(--accent);
+    font-size: 38px;
+  }
+
+  .champion .avatar {
+    border-color: #bca64b;
+
+    box-shadow:
+      inset 0 0 0 3px #10160f60,
+      0 0 14px #d7bd3610;
+  }
+
+  .champion .player-name,
+  .champion .rate-value {
+    color: var(--accent-light);
+  }
+
+  .champion .rate-track > span {
+    background: linear-gradient(
+      90deg,
+      #9e8727,
+      #e7cd4c
+    );
+  }
+
+  .leader-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    font: 500 9px var(--mono-font);
+    color: #c8b966;
+    letter-spacing: 0.8px;
+  }
+
+  .leader-tag svg {
+    flex-shrink: 0;
+  }
+
+  /* SEGUNDO Y TERCER PUESTO */
+
+  .second-place .rank {
+    color: #c5c7b4;
+  }
+
+  .third-place .rank {
+    color: #bda17d;
+  }
+
+  /* ESTADO VACÍO */
+
+  .empty-state {
+    padding: 45px 20px;
+
+    text-align: center;
+
+    color: var(--muted);
+    font: 11px var(--mono-font);
+    letter-spacing: 1px;
+  }
+
+  /* ========================================
+     PIE DEL LEADERBOARD
+     ======================================== */
+
+  .board-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    gap: 8px;
+    padding: 16px 28px;
+
+    font: 9px var(--mono-font);
+    color: #aaa990;
+    letter-spacing: 0.3px;
+
+    border-top: 1px solid var(--border);
+    background: #171b11;
+  }
+
+  .board-version {
+    color: #8d9172;
+  }
+
+  /* ========================================
+     FOOTER
+     ======================================== */
 
   .footer {
-    margin: 66px 0 25px;
-    padding: 17px 0;
-    border-top: 1px solid #ffffff1a;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    gap: 14px;
-    color: #6f7168;
-    font: 8px 'DM Mono', monospace;
-    letter-spacing: .7px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    gap: 12px;
+
+    margin: 28px 0 25px;
+    padding: 18px 0;
+
+    border-top: 1px solid #b3aa6025;
+
+    font: 9px var(--mono-font);
+    color: #999a7e;
+    letter-spacing: 1.2px;
   }
 
-  .footer-mark { color: #aaa99f; }
-  .footer-mark b { color: #d94e40; }
-
-  .footer-live { color: #8d9c79; }
-
-  .footer-live i {
-    width: 5px;
-    height: 5px;
-    background: #8d9c79;
-    box-shadow: 0 0 8px #8d9c7988;
+  .footer b {
+    color: var(--accent);
+    margin: 0 5px;
   }
 
-  @media(max-width:700px) {
+  /* ========================================
+     TABLETS
+     ======================================== */
+
+  @media (max-width: 850px) {
     .shell {
-      width: min(100% - 30px, 560px);
+      width: calc(100% - 36px);
+      padding-top: 18px;
     }
 
-    .topbar { height: 68px; }
-    .status { font-size: 8px; letter-spacing: .5px; }
-
-    .hero {
-      min-height: 240px;
-      padding: 38px 2px;
+    .board-heading {
+      padding: 22px;
     }
 
-    .hero-stamp {
-      margin-right: 10px;
-      transform: scale(.78) rotate(-10deg);
+    .position-heading {
+      width: 65px;
     }
 
-    h1 { font-size: clamp(54px, 12vw, 76px); }
-
-    .stats-strip {
-      grid-template-columns: repeat(2, 1fr);
-      margin-bottom: 42px;
+    .number-heading {
+      width: 95px;
     }
 
-    .strip-item { padding: 12px 14px; }
-    .strip-item:nth-child(2) { border-right: 0; }
-
-    .strip-item:nth-child(-n+2) {
-      border-bottom: 1px solid #ffffff18;
+    .rate-heading {
+      width: 150px;
+      padding-right: 22px;
     }
 
-    .table-head, .player-row {
-      grid-template-columns: minmax(0, 1fr) 58px 58px 90px;
-      padding-left: 12px;
+    .rate-cell {
+      padding-right: 22px;
+    }
+
+    .player-name {
+      font-size: 22px;
+    }
+  }
+
+  /* ========================================
+     MÓVILES
+     ======================================== */
+
+  @media (max-width: 600px) {
+    .shell {
+      width: calc(100% - 20px);
+      padding-top: 10px;
+    }
+
+    .hero-banner {
+      border-color: #554f30;
+    }
+
+    .hero-image {
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
+
+    .board-heading {
+      padding: 20px 14px;
+      gap: 8px;
+    }
+
+    .board-kicker {
+      font-size: 8px;
+      letter-spacing: 1.2px;
+      gap: 6px;
+    }
+
+    .indicator {
+      width: 5px;
+      height: 5px;
+    }
+
+    h2 {
+      font-size: 30px;
+      letter-spacing: 0.6px;
+    }
+
+    .sort-note {
+      font-size: 7px;
+      letter-spacing: 0.2px;
+      gap: 4px;
+    }
+
+    .sort-note svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    th {
+      height: 38px;
+
+      font-size: 8px;
+      letter-spacing: 0.3px;
+
+      padding: 0 4px;
+    }
+
+    .position-heading {
+      width: 40px;
+    }
+
+    .number-heading {
+      width: 38px;
+    }
+
+    .rate-heading {
+      width: 77px;
       padding-right: 12px;
     }
 
-    .table-head {
-      font-size: 8px;
-      letter-spacing: .5px;
+    .desktop-label {
+      position: absolute;
+
+      width: 1px;
+      height: 1px;
+
+      overflow: hidden;
+      clip-path: inset(50%);
+
+      white-space: nowrap;
     }
 
-    .player-row { min-height: 66px; }
+    .mobile-label {
+      display: inline;
+    }
 
-    .rank { width: 25px; font-size: 9px; }
-    .avatar { width: 33px; height: 33px; }
-    .player-name { font-size: 12px; margin-left: 9px; }
-    .number { font-size: 12px; }
-    .rate-cell strong { font-size: 12px; }
-    .rate-track { width: 55px; }
+    td {
+      height: 75px;
+      padding: 10px 4px;
+    }
 
-    .footer {
-      flex-wrap: wrap;
+    .rank {
+      font-size: 23px;
+    }
+
+    .champion .rank {
+      font-size: 27px;
+    }
+
+    .champion .position-cell::before {
+      width: 3px;
+    }
+
+    .player-identity {
+      gap: 8px;
+    }
+
+    .avatar {
+      width: 32px;
+      height: 34px;
+
+      font-size: 14px;
+    }
+
+    .player-name {
+      font-size: 17px;
+      line-height: 1.1;
+      letter-spacing: 0.2px;
+    }
+
+    .leader-tag {
+      font-size: 6px;
+      gap: 3px;
+      letter-spacing: 0.1px;
+    }
+
+    .leader-tag svg {
+      width: 9px;
+      height: 9px;
+    }
+
+    .number {
+      font-size: 13px;
+    }
+
+    .rate-cell {
+      padding-right: 12px;
+    }
+
+    .rate-value {
+      font-size: 21px;
+    }
+
+    .rate-value small {
+      font-size: 11px;
+    }
+
+    .rate-track {
+      max-width: 50px;
+      height: 4px;
+      margin-top: 7px;
+    }
+
+    .board-footer {
+      padding: 12px;
+
+      font-size: 7px;
       line-height: 1.6;
     }
 
-    .footer>span:nth-child(2) {
-      order: 3;
-      width: 100%;
+    .board-version {
+      display: none;
+    }
+
+    .footer {
+      margin-top: 20px;
+      padding-top: 15px;
+
+      font-size: 7px;
+      line-height: 1.6;
+      letter-spacing: 0.7px;
     }
   }
 
-  @media(max-width:390px) {
-    .hero-stamp { display: none; }
+  /* PANTALLAS PEQUEÑAS */
 
-    .table-head, .player-row {
-      grid-template-columns: minmax(0, 1fr) 48px 52px 78px;
+  @media (max-width: 360px) {
+    .avatar {
+      display: none;
     }
 
-    .table-head {
-      padding-left: 8px;
-      padding-right: 8px;
+    .player-name {
+      font-size: 16px;
     }
 
-    .player-row {
-      padding-left: 8px;
-      padding-right: 8px;
+    .position-heading {
+      width: 34px;
     }
 
-    .rank { width: 21px; }
-    .player-name { font-size: 11px; }
-    .avatar { width: 30px; height: 30px; }
+    .number-heading {
+      width: 32px;
+    }
+
+    .rate-heading {
+      width: 70px;
+    }
+  }
+
+  /* ACCESIBILIDAD */
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+</style>
+<style is:global>
+  html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    background: #14160e;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100vh;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  main.shell {
+    display: block;
+    width: calc(100% - 48px);
+    max-width: 1180px;
+    min-width: 0;
+    margin: 0 auto;
+    padding: 32px 0 0;
+  }
+
+  .shell > .hero-banner {
+    display: block;
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #5c542e;
+    border-bottom: none;
+    background: #242619;
+  }
+
+  .hero-banner > img.hero-image {
+    display: block;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    margin: 0;
+    padding: 0;
+    object-fit: contain;
+  }
+
+  .shell > .leaderboard {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    border: 1px solid #45482b;
+    border-top: none;
+    background: #191d13;
+  }
+
+  .hero-banner::before,
+  .hero-banner::after {
+    display: none;
+  }
+
+  .leaderboard .hazard-stripe {
+    display: none;
+  }
+
+  .table-scroll {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .ranking-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+  }
+
+  @media (max-width: 850px) {
+    main.shell {
+      width: calc(100% - 32px);
+      padding-top: 20px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    main.shell {
+      width: calc(100% - 20px);
+      padding-top: 12px;
+    }
+
+    .hero-banner {
+      margin: 0;
+    }
+
+    .board-heading {
+      padding: 18px 14px;
+    }
   }
 </style>
