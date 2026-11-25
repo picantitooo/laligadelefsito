@@ -227,12 +227,23 @@ const hasRatedMatches = rankedPlayers.some(
                   <td class="identity-cell">
                     <div class="player-identity">
                       <div
-                        class="avatar"
-                        style={`--player-color: ${player.color}`}
-                        aria-hidden="true"
-                      >
-                        <span>{player.initials}</span>
-                      </div>
+                          class="avatar"
+                          style={`--player-color: ${player.color}`}
+                          aria-hidden="true"
+                        >
+
+                          {player.avatar && (
+                            <img
+                              src={`${base}/${player.avatar}`}
+                              alt=""
+                              class="avatar-image"
+                              width="52"
+                              height="52"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          )}
+                        </div>
 
                       <div class="player-info">
                         <div class="player-name-line">

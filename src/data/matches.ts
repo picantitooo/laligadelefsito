@@ -7,5 +7,4 @@ export type Match = {
 
 export const matches: Match[] = [
   // Registrar únicamente las partidas nuevas.
-
 ];
