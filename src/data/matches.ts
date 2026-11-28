@@ -3,10 +3,10 @@ export type Match = {
   id: number;
   winners: string[];
   losers: string[];
+  abandonedBy?: string;
 };
 
 export const matches: Match[] = [
-  // Registrar únicamente las partidas nuevas.
   {
     id: 1,
     winners: ["Piero", "Sheva", "Pulse", "Pol"],
@@ -15,6 +15,7 @@ export const matches: Match[] = [
   {
     id: 2,
     winners: ["Tarasexo", "Piero", "Pol", "rek"],
-    losers: ["Pulse", "", "", ""]
+    losers: ["Pulse", "Sheva", "PALS", "Valcra"],
+    abandonedBy: "Pulse"
   }
 ];

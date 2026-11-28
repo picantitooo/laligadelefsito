@@ -12,6 +12,7 @@ export const RANKING_CONFIG = {
   PRIOR_WEIGHT: 5,
   K_FACTOR: 32,
   MIN_RATED_GAMES: 5,
+  ABANDONMENT_MULTIPLIER: 4,
 } as const;
 
 // ========================================
@@ -135,7 +136,17 @@ export function calculateRanking() {
       ratedWins: 0,
       ratedLosses: 0,
 
+      abandonments: 0,
+      protectedGames: 0,
+      penaltyPoints: 0,
+
       lastChange: 0,
+
+      lastEvent: "initial" as
+        | "initial"
+        | "match"
+        | "abandonment"
+        | "protected",
 
       ratingHistory: [initialRating],
 
@@ -224,8 +235,24 @@ export function calculateRanking() {
       }
     }
 
+    // Validar abandono.
+
+    const abandonedBy = match.abandonedBy;
+
+    const hasAbandonment =
+      abandonedBy !== undefined;
+
+    if (
+      hasAbandonment &&
+      !match.losers.includes(abandonedBy)
+    ) {
+      throw new Error(
+        `El jugador que abandona debe pertenecer ` +
+        `al equipo perdedor. Partida ${match.id}`
+      );
+    }
+
     // Guardar Elo previo a la partida.
-    // Todos los cálculos utilizan estos valores.
 
     const previousRatings = new Map(
       ranking.map((player) => [
@@ -261,6 +288,9 @@ export function calculateRanking() {
           0
         ) / match.losers.length;
 
+      // Los ganadores reciben su Elo normal,
+      // incluso cuando existe un abandono.
+
       const change =
         RANKING_CONFIG.K_FACTOR *
         (1 - expected);
@@ -273,6 +303,17 @@ export function calculateRanking() {
     // ========================================
 
     for (const name of match.losers) {
+
+      // Proteger a los compañeros perjudicados.
+
+      if (
+        hasAbandonment &&
+        name !== abandonedBy
+      ) {
+        changes.set(name, 0);
+        continue;
+      }
+
       const currentRating =
         previousRatings.get(name)!;
 
@@ -293,9 +334,19 @@ export function calculateRanking() {
           0
         ) / match.winners.length;
 
-      const change =
+      const normalLoss =
         RANKING_CONFIG.K_FACTOR *
         (0 - expected);
+
+      // Penalización exclusiva al jugador
+      // responsable del abandono.
+
+      const multiplier =
+        name === abandonedBy
+          ? RANKING_CONFIG.ABANDONMENT_MULTIPLIER
+          : 1;
+
+      const change = normalLoss * multiplier;
 
       changes.set(name, change);
     }
@@ -309,11 +360,43 @@ export function calculateRanking() {
     for (const name of participants) {
       const player = playerMap.get(name)!;
       const change = changes.get(name)!;
+
       const won = winnerSet.has(name);
+
+      const abandoned =
+        name === abandonedBy;
+
+      const protectedByAbandonment =
+        hasAbandonment &&
+        !won &&
+        !abandoned;
+
+      // Compañeros protegidos:
+      // no pierden Elo ni reciben derrotas.
+
+      if (protectedByAbandonment) {
+        player.protectedGames += 1;
+        player.lastChange = 0;
+        player.lastEvent = "protected";
+
+        player.ratingHistory.push(
+          player.rating
+        );
+
+        continue;
+      }
+
+      // Actualizar rating.
 
       player.rating += change;
       player.lastChange = change;
       player.ratedGames += 1;
+
+      player.lastEvent = abandoned
+        ? "abandonment"
+        : "match";
+
+      // Registrar resultado deportivo.
 
       if (won) {
         player.wins += 1;
@@ -325,11 +408,18 @@ export function calculateRanking() {
         player.recentResults.push("L");
       }
 
+      // Registrar sanción por abandono.
+
+      if (abandoned) {
+        player.abandonments += 1;
+        player.penaltyPoints += Math.abs(change);
+      }
+
+      // Actualizar historial de Elo.
+
       player.ratingHistory.push(
         player.rating
       );
-
-      // Conservar las últimas cinco partidas.
 
       player.recentResults =
         player.recentResults.slice(-5);
