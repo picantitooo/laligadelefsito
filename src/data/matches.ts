@@ -15,6 +15,6 @@ export const matches: Match[] = [
   {
     id: 2,
     winners: ["Tarasexo", "Piero", "Pol", "rek"],
-    losers: ["Pulse", "Pulse", "Pulse", "Pulse"]
+    losers: ["Pulse", "", "", ""]
   }
 ];
